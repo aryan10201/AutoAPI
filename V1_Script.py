@@ -3,15 +3,14 @@ import asyncio
 import time
 import string
 from collections import deque
-import time
-
+import json  # Added JSON import
 
 BASE_URL = "http://35.200.185.69:8000/v1/autocomplete?query="
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 INITIAL_WAIT = 0.2
 MAX_WAIT = 5
-OUTPUT_FILE = "V1Names.txt"
+OUTPUT_FILE = "v1_names.json"  # Changed to .json
 
 rate_limit_wait = INITIAL_WAIT
 visited_queries = set()
@@ -64,26 +63,28 @@ async def explore_query(session, query, queue):
 async def explore_names():
     # initial BFS queue with "aa".."zz"
     queue = deque(a + b for a in string.ascii_lowercase for b in string.ascii_lowercase)
-    concurrency_limit = asyncio.Semaphore(10)  # adjust concurrency here
+    concurrency_limit = asyncio.Semaphore(5)
 
     async with aiohttp.ClientSession() as session:
         tasks = []
         while queue or tasks:
-            # schedule new tasks if we have capacity
-            while queue and len(tasks) < 20:
+            while queue and len(tasks) < 5:
                 query = queue.popleft()
-                # limit concurrency per request with semaphore
                 task = asyncio.create_task(worker(session, query, queue, concurrency_limit))
                 tasks.append(task)
-            # wait for at least one task to complete
             if tasks:
                 done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
                 tasks = list(pending)
     
-    # write output to file
+    # Modified output section to JSON
+    output_data = {
+        "total_requests": total_requests,
+        "total_names": len(found_names),
+        "names": sorted(found_names)
+    }
+    
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        for name in sorted(found_names):
-            f.write(name + "\n")
+        json.dump(output_data, f, indent=2)
     
     print(f"\nTotal unique names collected: {len(found_names)}")
     print(f"Total API requests made: {total_requests}")
