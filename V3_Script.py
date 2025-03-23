@@ -1,4 +1,3 @@
-import os
 import json
 import time
 import requests
@@ -18,6 +17,7 @@ class RateLimiter:
         if len(self.request_timestamps) >= self.requests_per_minute:
             wait_time = self.request_timestamps[0] + self.window_size - current_time
             if wait_time > 0:
+                print(f"Rate limit hit. Waiting for {wait_time:.2f} seconds.")
                 time.sleep(wait_time)
         self.request_timestamps.append(time.time())
 
@@ -35,21 +35,21 @@ class AutocompleteAPIClient:
         return []
 
 class V3Extractor:
-    def __init__(self, results_dir: str):
+    def __init__(self, output_file: str):
         self.version = "v3"
         self.api_client = AutocompleteAPIClient()
         self.rate_limiter = RateLimiter(80)
-        self.results_dir = results_dir
+        self.output_file = output_file
         self.names: Set[str] = set()
         self.visited_prefixes: Set[str] = set()
         self.request_count: int = 0
-        os.makedirs(results_dir, exist_ok=True)
     
     def extract_names(self):
         for char in self.get_character_set():
             if char not in self.visited_prefixes:
                 self._dfs(char)
         self._save_results()
+        print(f"Extraction complete. {len(self.names)} names extracted from {self.request_count} requests.")
     
     def _dfs(self, prefix: str):
         if prefix in self.visited_prefixes:
@@ -64,12 +64,12 @@ class V3Extractor:
                 self._dfs(prefix + char)
     
     def _save_results(self):
-        results_path = os.path.join(self.results_dir, "v3_names.json")
-        with open(results_path, 'w') as f:
+        with open(self.output_file, 'w') as f:
             json.dump({
                 'version': self.version,
                 'names': list(self.names),
-                'request_count': self.request_count
+                'request_count': self.request_count,
+                'num_names': len(self.names)
             }, f, indent=2)
     
     def get_character_set(self) -> List[str]:
@@ -78,13 +78,13 @@ class V3Extractor:
     def get_max_results(self) -> int:
         return 15
 
-def main(results_dir: str):
-    extractor = V3Extractor(results_dir)
+def main(output_file: str):
+    extractor = V3Extractor(output_file)
     extractor.extract_names()
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Run V3 name extractor')
-    parser.add_argument('--results-dir', type=str, default='results', help='Directory to store results')
+    parser.add_argument('--output-file', type=str, default='v3_names.json', help='File to store results')
     args = parser.parse_args()
-    main(args.results_dir)
+    main(args.output_file)
