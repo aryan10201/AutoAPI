@@ -5,10 +5,9 @@ import json
 from collections import deque
 
 BASE_URL = "http://35.200.185.69:8000/v3/autocomplete"
-# HEADERS = {"User-Agent": "NameExtractorBot/1.0"}
 
 MAX_RESULTS_PER_QUERY = 15
-REQUEST_DELAY = 1.2
+REQUEST_DELAY = 0.6
 RETRY_DELAY = 5      
 SAVE_INTERVAL = 100
 
@@ -16,10 +15,8 @@ seenNames = set()
 visitedWords = set()
 count = 0
 
-# Output file
 RESULTS_FILE = "v3_names.json"
 
-# Try to resume if possible
 try:
     with open(RESULTS_FILE, "r") as f:
         seenNames = set(json.load(f))
@@ -27,7 +24,6 @@ try:
 except FileNotFoundError:
     pass
 
-CHARSET = string.ascii_lowercase + string.digits + "+-. "
 
 def search_api(prefix):
     global count
@@ -50,7 +46,7 @@ def search_api(prefix):
 
 
 def mainFunction():
-    queue = deque(CHARSET)
+    queue = deque([str(i) for i in range(10)] + list(string.ascii_lowercase) + ['+', '-', '.'])
 
     while queue:
         prefix = queue.popleft()
@@ -65,16 +61,14 @@ def mainFunction():
         seenNames.update(newNames)
 
         if len(results) == MAX_RESULTS_PER_QUERY:
-            for c in CHARSET:
+            for c in string.digits + string.ascii_lowercase + ['+', '-', '.']:
                 new_prefix = prefix + c
                 if new_prefix not in visitedWords:
                     queue.append(new_prefix)
 
-        # Save periodically
         if count % SAVE_INTERVAL == 0:
             save_results()
 
-    # Final save
     save_results()
 
 
