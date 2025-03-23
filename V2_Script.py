@@ -37,7 +37,7 @@ def search_api(prefix):
                 print("Rate limit exceeded. Sleeping before retrying...")
                 time.sleep(RETRY_DELAY)
                 continue
-
+            
             response.raise_for_status()
             data = response.json()
             return data.get("results", [])
@@ -78,7 +78,6 @@ def save_results():
     with open(RESULTS_FILE, "w") as f:
         json.dump(sorted(seenNames), f, indent=2)
     print(f"Saved {len(seenNames)} names after {count} requests.")
-
 
 if __name__ == "__main__":
     mainFunction()

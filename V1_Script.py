@@ -3,14 +3,14 @@ import asyncio
 import time
 import string
 from collections import deque
-import json  # Added JSON import
+import json  
 
 BASE_URL = "http://35.200.185.69:8000/v1/autocomplete?query="
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 INITIAL_WAIT = 0.2
 MAX_WAIT = 5
-OUTPUT_FILE = "v1_names.json"  # Changed to .json
+OUTPUT_FILE = "v1_names.json" 
 
 rate_limit_wait = INITIAL_WAIT
 visited_queries = set()
@@ -76,7 +76,6 @@ async def explore_names():
                 done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
                 tasks = list(pending)
     
-    # Modified output section to JSON
     output_data = {
         "total_requests": total_requests,
         "total_names": len(found_names),
