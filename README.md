@@ -9,7 +9,7 @@ This project automates the extraction of all possible names available through an
 - Discovered that the maximum results per query were **10**.
 - API had a **rate limit** of **100 requests per minute**.
 - Implemented a **Breadth-First Search (BFS)** approach to traverse through name possibilities.
-- Used **async concurrent workers with semaphores** to reduce execution time.
+- Used **async concurrent workers using semaphore** to reduce execution time.
 - Saved extracted names in `v1_names.json`.
 - **Script:** `V1_Script.py`
 
@@ -43,7 +43,7 @@ This project automates the extraction of all possible names available through an
 ## Features
 - **Automated BFS-based name extraction** to ensure all possible names are collected.
 - **Handles rate limits** using **adaptive waiting, exponential backoff, and retry mechanisms**.
-- **Uses async concurrent workers with semaphores** to reduce execution time.
+- **Uses async concurrent workers, semaphore** to reduce execution time.
 - **Progress persistence** to avoid redundant requests in case of failures.
 - **Efficient character expansion** to explore names systematically.
 - **Extracted names saved in JSON files** for easy access.
