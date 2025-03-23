@@ -5,19 +5,22 @@ import string
 from collections import deque
 import json  
 
+# Base API URL for fetching autocomplete suggestions
 BASE_URL = "http://35.200.185.69:8000/v1/autocomplete?query="
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
-INITIAL_WAIT = 0.2
-MAX_WAIT = 5
-OUTPUT_FILE = "v1_names.json" 
+# Rate limit parameters
+INITIAL_WAIT = 0.2  # Initial wait time after a rate limit hit
+MAX_WAIT = 5  # Maximum wait time for rate limiting
+OUTPUT_FILE = "v1_names.json"  # Output file to store results
 
-rate_limit_wait = INITIAL_WAIT
-visited_queries = set()
-found_names = set()
-total_requests = 0
+rate_limit_wait = INITIAL_WAIT  # Dynamic rate limit wait time
+visited_queries = set()  # Set to track visited queries
+found_names = set()  # Set to store unique names
+total_requests = 0  # Counter for total API requests made
 
 async def fetch_names(session, query):
+    """Fetch autocomplete results from API for a given query."""
     global rate_limit_wait, total_requests
     url = BASE_URL + query
     
@@ -25,19 +28,20 @@ async def fetch_names(session, query):
         try:
             async with session.get(url, headers=HEADERS) as response:
                 total_requests += 1
-                if response.status == 429:
+                if response.status == 429:  # Handle rate limiting
                     rate_limit_wait = min(rate_limit_wait * 1.5, MAX_WAIT)
                     print(f"[429] Rate limit. Sleeping {rate_limit_wait:.1f}s ... (query='{query}')")
                     await asyncio.sleep(rate_limit_wait)
                     continue
                 data = await response.json()
-                rate_limit_wait = max(rate_limit_wait * 0.8, INITIAL_WAIT)
+                rate_limit_wait = max(rate_limit_wait * 0.8, INITIAL_WAIT)  # Gradually decrease wait time
                 return data.get("results", [])
         except Exception as e:
             print(f"Error fetching {query}: {e}. Retrying in 2s...")
             await asyncio.sleep(2)
 
 async def explore_query(session, query, queue):
+    """Explore a query by fetching results and generating new queries."""
     if query in visited_queries:
         return
     visited_queries.add(query)
@@ -49,6 +53,7 @@ async def explore_query(session, query, queue):
     for name in results:
         found_names.add(name)
     
+    # If API returns 10 results, explore further by adding new queries
     if len(results) == 10:
         last_name = results[-1]
         if len(last_name) > len(query):
@@ -61,14 +66,15 @@ async def explore_query(session, query, queue):
                     queue.append(next_query)
 
 async def explore_names():
-    # initial BFS queue with "aa".."zz"
+    """Start the name exploration process using BFS."""
+    # Initial BFS queue with "aa" to "zz"
     queue = deque(a + b for a in string.ascii_lowercase for b in string.ascii_lowercase)
-    concurrency_limit = asyncio.Semaphore(5)
+    concurrency_limit = asyncio.Semaphore(5)  # Limit concurrent tasks
 
     async with aiohttp.ClientSession() as session:
         tasks = []
         while queue or tasks:
-            while queue and len(tasks) < 5:
+            while queue and len(tasks) < 5:  # Limit concurrent workers
                 query = queue.popleft()
                 task = asyncio.create_task(worker(session, query, queue, concurrency_limit))
                 tasks.append(task)
@@ -76,6 +82,7 @@ async def explore_names():
                 done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
                 tasks = list(pending)
     
+    # Save results to JSON file
     output_data = {
         "total_requests": total_requests,
         "total_names": len(found_names),
@@ -89,6 +96,7 @@ async def explore_names():
     print(f"Total API requests made: {total_requests}")
 
 async def worker(session, query, queue, semaphore):
+    """Worker function to process a query with concurrency control."""
     async with semaphore:
         await explore_query(session, query, queue)
 
