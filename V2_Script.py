@@ -17,7 +17,7 @@ processed_prefixes = set()
 api_request_count = 0
 extracted_names_count = 0
 
-OUTPUT_FILENAME = "v4_names.json"
+OUTPUT_FILENAME = "v2_names.json"
 
 # Attempt to load previously extracted names from file
 try:
