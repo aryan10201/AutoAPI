@@ -45,8 +45,8 @@ This project automates the extraction of all possible names available through an
 |---------|-------------------|--------------------|-----------------------------|
 | V1      | 10                | ~20000             | ~49 minutes                 |
 | V1      | 5                 | 17259              | ~67 minutes                 |
-| V1      | 3                 | 15971              | ~90 minutes                 |               |
-
+| V1      | 3                 | 15971              | ~90 minutes                 |
+**Make changes in the V1_Script to obtain these results**
 
 ## Features
 - **Automated BFS-based name extraction** to ensure all possible names are collected.
