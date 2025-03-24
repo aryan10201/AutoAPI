@@ -40,6 +40,14 @@ This project automates the extraction of all possible names available through an
 | V2      | 12                    | a-z, 0-9                | 50                        | 13,730          | 7416               |
 | V3      | 15                    | a-z, 0-9, +, -, ., space| 80                        | 12,226          | 3393               |
 
+## V1 Analysis
+| Version | Number of Workers | Number of Requests |Time Taken to Complete Script|
+|---------|-------------------|--------------------|-----------------------------|
+| V1      | 10                | ~20000             | ~49 minutes                 |
+| V1      | 5                 | 17259              | ~67 minutes                 |
+| V1      | 3                 | 15971              | ~90 minutes                 |               |
+
+
 ## Features
 - **Automated BFS-based name extraction** to ensure all possible names are collected.
 - **Handles rate limits** using **adaptive waiting, exponential backoff, and retry mechanisms**.
