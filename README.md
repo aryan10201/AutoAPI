@@ -17,11 +17,11 @@ Prefix Crawling Strategy: Recursively explores prefixes (e.g., a, aa, ab, etc.) 
 Efficient Data Storage: Uses a set to store unique names, preventing duplicates and ensuring accurate results.
 
 ## API Behavior Observations
-| Version | Max Results per Query | Character Set Supported |Max_results| Rate Limit (Requests/Min) | Names Extracted | Number of Requests |Execution Time|
-|---------|---------------------- |-------------------------|-----------|-------------------------- |---------------- |------------------  |--------------|
-| V1      | 10                    | Lowercase Letters (a-z) | 50        | 100                       | 18,632          | 1780               |16 Min        |
-| V2      | 12                    | a-z, 0-9                | 75        | 50                        | 13,730          | 2278               |38 Min        |
-| V3      | 15                    | a-z, 0-9, +, -, ., space| 100       | 80                        | 12,318          | 1951               |21 Min        |
+| Version | Def. Results per Query | Character Set Supported |Max_results| Rate Limit (Requests/Min) | Names Extracted | Number of Requests |Execution Time|
+|---------|----------------------  |-------------------------|-----------|-------------------------- |---------------- |------------------  |--------------|
+| V1      | 10                     | Lowercase Letters (a-z) | 50        | 100                       | 18,632          | 1780               |16 Min        |
+| V2      | 12                     | a-z, 0-9                | 75        | 50                        | 13,730          | 2278               |38 Min        |
+| V3      | 15                     | a-z, 0-9, +, -, ., space| 100       | 80                        | 12,318          | 1951               |21 Min        |
 
 ## Submission Files
 - **Working Code:** `V1_Script.py`, `V2_Script.py`, `V3_Script.py`
