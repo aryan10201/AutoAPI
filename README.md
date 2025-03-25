@@ -3,58 +3,25 @@
 ## Overview
 This project automates the extraction of all possible names available through an undocumented autocomplete API. The solution systematically queries the API, navigates through constraints like rate limiting, and stores extracted names efficiently.
 
-## Approach
-### **Version 1 (V1)**
-- Explored API using simple queries like `aa`to `zz`, etc.
-- Discovered that the maximum results per query were **10**.
-- API had a **rate limit** of **100 requests per minute**.
-- Implemented a **Breadth-First Search (BFS)** approach to traverse through name possibilities.
-- Used **async concurrent workers using semaphore** to reduce execution time.
-- Saved extracted names in `v1_names.json`.
-- **Script:** `V1_Script.py`
+## Key Features & Approach
+Asynchronous Requests: Utilizes Python's asyncio and aiohttp libraries for concurrent network requests, significantly improving performance.
 
-### **Version 2 (V2)**
-- API updated to include **digits (0-9)** in names.
-- Discovered that the maximum results per query were **12**.
-- The API had a stricter **rate limit of 50 requests per minute**.
-- Modified BFS to include **alphanumeric prefixes**.
-- Implemented **exponential backoff** for handling rate limits.
-- Implemented **periodic saving** to prevent data loss.
-- Saved extracted names in `v2_names.json`.
-- **Script:** `V2_Script.py`
+Depth-First Search (DFS) Approach: Uses DFS to explore autocomplete suggestions by starting with single-letter prefixes and expanding recursively.
 
-### **Version 3 (V3)**
-- API extended to support **special characters (+, -, ., space)**.
-- Discovered that the maximum results per query were **15**.
-- API had a **rate limit** of **80 requests per minute**.
-- Implemented **adaptive retries with exponential backoff** to handle **rate limits (HTTP 429 errors)**.
-- Implemented **progress saving** every **100 requests**.
-- Ensured **URL encoding** to handle spaces correctly.
-- Extracted names are stored in `v3_names.json`.
-- **Script:** `V3_Script.py`
+Rate Limit Management: Implements automatic retries with a 10-second delay when encountering a 429 rate limit response.
+
+Max Results Handling: If the API returns the maximum number of results, the extractor extends the current prefix and continues the search.
+
+Prefix Crawling Strategy: Recursively explores prefixes (e.g., a, aa, ab, etc.) to extract all available names.
+
+Efficient Data Storage: Uses a set to store unique names, preventing duplicates and ensuring accurate results.
 
 ## API Behavior Observations
-| Version | Max Results per Query | Character Set Supported | Rate Limit (Requests/Min) | Names Extracted | Number of Requests |
-|---------|---------------------- |-------------------------|-------------------------- |---------------- |------------------  |
-| V1      | 10                    | Lowercase Letters (a-z) | 100                       | 18,632          | 17259              |
-| V2      | 12                    | a-z, 0-9                | 50                        | 13,730          | 7416               |
-| V3      | 15                    | a-z, 0-9, +, -, ., space| 80                        | 12,226          | 3393               |
-
-## V1 Analysis
-| Version | Number of Workers | Number of Requests |Time Taken to Complete Script|
-|---------|-------------------|--------------------|-----------------------------|
-| V1      | 10                | ~20000             | ~49 minutes                 |
-| V1      | 5                 | 17259              | ~67 minutes                 |
-| V1      | 3                 | 15971              | ~90 minutes                 |
-**Make changes in the V1_Script to obtain these results**
-
-## Features
-- **Automated BFS-based name extraction** to ensure all possible names are collected.
-- **Handles rate limits** using **adaptive waiting, exponential backoff, and retry mechanisms**.
-- **Uses async concurrent workers, semaphore** to reduce execution time.
-- **Progress persistence** to avoid redundant requests in case of failures.
-- **Efficient character expansion** to explore names systematically.
-- **Extracted names saved in JSON files** for easy access.
+| Version | Max Results per Query | Character Set Supported |Max_results| Rate Limit (Requests/Min) | Names Extracted | Number of Requests |
+|---------|---------------------- |-------------------------|-----------|-------------------------- |---------------- |------------------  |
+| V1      | 10                    | Lowercase Letters (a-z) | 50        | 100                       | 18,632          | 17259              |
+| V2      | 12                    | a-z, 0-9                | 75        | 50                        | 13,730          | 7416               |
+| V3      | 15                    | a-z, 0-9, +, -, ., space| 100       | 80                        | 12,226          | 3393               |
 
 ## Submission Files
 - **Working Code:** `V1_Script.py`, `V2_Script.py`, `V3_Script.py`
