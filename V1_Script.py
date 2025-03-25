@@ -2,105 +2,105 @@ import aiohttp
 import asyncio
 import time
 import string
-from collections import deque
-import json  
+import json
+from typing import Literal
+from urllib.parse import quote
 
-# Base API URL for fetching autocomplete suggestions
-BASE_URL = "http://35.200.185.69:8000/v1/autocomplete?query="
-HEADERS = {"User-Agent": "Mozilla/5.0"}
+class AsyncAutocompleteExtractor:
+    def __init__(self, base_url: str, max_results: int, charlist: str, version: Literal["v1", "v2", "v3"]):
+        self.api_url = base_url
+        self.limit = max_results
+        self.discovered_entries = set()
+        self.request_total = 0
+        self.characters = sorted(charlist)
+        self.api_version = version
+        self.req_semaphore = asyncio.Semaphore(3)  # Limit concurrent requests
 
-# Rate limit parameters
-INITIAL_WAIT = 0.2  # Initial wait time after a rate limit hit
-MAX_WAIT = 5  # Maximum wait time for rate limiting
-OUTPUT_FILE = "v1_names.json"  # Output file to store results
+    async def fetch_suggestions(self, session, search_term: str):
+        encoded_term = quote(search_term)
+        url = f"{self.api_url}/{self.api_version}/autocomplete?query={encoded_term}&max_results={self.limit}"
 
-rate_limit_wait = INITIAL_WAIT  # Dynamic rate limit wait time
-visited_queries = set()  # Set to track visited queries
-found_names = set()  # Set to store unique names
-total_requests = 0  # Counter for total API requests made
+        async with self.req_semaphore:
+            try:
+                async with session.get(url) as resp:
+                    self.request_total += 1
 
-async def fetch_names(session, query):
-    """Fetch autocomplete results from API for a given query."""
-    global rate_limit_wait, total_requests
-    url = BASE_URL + query
-    
-    while True:
-        try:
-            async with session.get(url, headers=HEADERS) as response:
-                total_requests += 1
-                if response.status == 429:  # Handle rate limiting
-                    rate_limit_wait = min(rate_limit_wait * 1.5, MAX_WAIT)
-                    print(f"[429] Rate limit. Sleeping {rate_limit_wait:.1f}s ... (query='{query}')")
-                    await asyncio.sleep(rate_limit_wait)
-                    continue
-                data = await response.json()
-                rate_limit_wait = max(rate_limit_wait * 0.8, INITIAL_WAIT)  # Gradually decrease wait time
-                return data.get("results", [])
-        except Exception as e:
-            print(f"Error fetching {query}: {e}. Retrying in 2s...")
-            await asyncio.sleep(2)
+                    if resp.status == 429:
+                        print("Rate limit reached. Pausing for 10s...")
+                        await asyncio.sleep(10)
+                        return await self.fetch_suggestions(session, search_term)
 
-async def explore_query(session, query, queue):
-    """Explore a query by fetching results and generating new queries."""
-    if query in visited_queries:
-        return
-    visited_queries.add(query)
-    
-    results = await fetch_names(session, query)
-    if not results:
-        return
-    
-    for name in results:
-        found_names.add(name)
-    
-    # If API returns 10 results, explore further by adding new queries
-    if len(results) == 10:
-        last_name = results[-1]
-        if len(last_name) > len(query):
-            pivot_char = last_name[len(query)]
-            start_ord = ord(pivot_char)
-            end_ord = ord('z')
-            for c in range(start_ord, end_ord + 1):
-                next_query = query + chr(c)
-                if next_query not in visited_queries:
-                    queue.append(next_query)
+                    if resp.status != 200:
+                        print(f"Unexpected status: {resp.status}. Retrying...")
+                        await asyncio.sleep(1)
+                        return []
 
-async def explore_names():
-    """Start the name exploration process using BFS."""
-    # Initial BFS queue with "aa" to "zz"
-    queue = deque(a + b for a in string.ascii_lowercase for b in string.ascii_lowercase)
-    concurrency_limit = asyncio.Semaphore(5)  # Limit concurrent tasks
+                    response_data = await resp.json()
 
-    async with aiohttp.ClientSession() as session:
+                    if isinstance(response_data.get("results"), list):
+                        suggestions = response_data["results"]
+                        print(f"Search '{search_term}' returned {len(suggestions)} results. Total found: {len(self.discovered_entries)}")
+                        return suggestions
+                    else:
+                        print(f"Unexpected data format: {response_data.keys()}")
+                        return []
+            except Exception as err:
+                print(f"Error with query '{search_term}': {err}")
+                return []
+
+    async def initiate_extraction(self):
+        print(f"Starting extraction with max results = {self.limit}")
+        start_time = time.time()
+
         tasks = []
-        while queue or tasks:
-            while queue and len(tasks) < 5:  # Limit concurrent workers
-                query = queue.popleft()
-                task = asyncio.create_task(worker(session, query, queue, concurrency_limit))
-                tasks.append(task)
-            if tasks:
-                done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-                tasks = list(pending)
-    
-    # Save results to JSON file
-    output_data = {
-        "total_requests": total_requests,
-        "total_names": len(found_names),
-        "names": sorted(found_names)
-    }
-    
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(output_data, f, indent=2)
-    
-    print(f"\nTotal unique names collected: {len(found_names)}")
-    print(f"Total API requests made: {total_requests}")
+        async with aiohttp.ClientSession() as session:
+            for character in self.characters:
+                if character == " ":
+                    continue
+                tasks.append(asyncio.create_task(self.analyze_prefix(session, character)))
 
-async def worker(session, query, queue, semaphore):
-    """Worker function to process a query with concurrency control."""
-    async with semaphore:
-        await explore_query(session, query, queue)
+            await asyncio.gather(*tasks)
+
+        elapsed_time = time.time() - start_time
+        print(f"Extraction completed in {elapsed_time:.2f} sec")
+        print(f"Total API calls: {self.request_total}")
+        print(f"Total unique entries: {len(self.discovered_entries)}")
+
+        return self.discovered_entries
+
+    async def analyze_prefix(self, session, prefix: str):
+        print(f"Examining prefix: '{prefix}'")
+        suggestions = await self.fetch_suggestions(session, prefix)
+
+        for entry in suggestions:
+            self.discovered_entries.add(entry)
+
+        if len(suggestions) == self.limit:
+            next_char = suggestions[-1][len(prefix)]
+            index = self.characters.index(next_char)
+            for next_char in self.characters[index:]:
+                if next_char == " ":
+                    continue
+                await self.analyze_prefix(session, prefix + next_char)
+
+    def store_results(self, filename="v4_names.json"):
+        output_data = {
+            "request_count": self.request_total,
+            "total_entries": len(self.discovered_entries),
+            "entries": sorted(self.discovered_entries),
+        }
+        with open(filename, "w") as file:
+            json.dump(output_data, file, indent=2)
+        print(f"Data stored in {filename}")
+
+async def main():
+    extractor = AsyncAutocompleteExtractor(
+        "http://35.207.196.198:8000", 50, string.ascii_lowercase, "v1"
+    )
+    extracted_entries = await extractor.initiate_extraction()
+    extractor.store_results()
+    print(f"Process completed. Found {len(extracted_entries)} unique entries.")
+    print(f"Total API calls made: {extractor.request_total}")
 
 if __name__ == "__main__":
-    start_time = time.time()
-    asyncio.run(explore_names())
-    print("--- %s seconds ---" % (time.time() - start_time))
+    asyncio.run(main())
