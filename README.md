@@ -19,7 +19,7 @@ Efficient Data Storage: Uses a set to store unique names, preventing duplicates 
 ## API Behavior Observations
 | Version | Def. Results per Query | Character Set Supported |Max_results| Rate Limit (Requests/Min) | Names Extracted | Number of Requests |Execution Time|
 |---------|----------------------  |-------------------------|-----------|-------------------------- |---------------- |------------------  |--------------|
-| V1      | 10                     | Lowercase Letters (a-z) | 50        | 100                       | 18,632          | 1780               |16 Min        |
+| V1      | 10                     | Lowercase Letters (a-z) | 50        | 100                       | 18,632          | 1630               |18 Min        |
 | V2      | 12                     | a-z, 0-9                | 75        | 50                        | 13,730          | 2278               |38 Min        |
 | V3      | 15                     | a-z, 0-9, +, -, ., space| 100       | 80                        | 12,318          | 1951               |21 Min        |
 
