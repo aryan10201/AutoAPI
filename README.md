@@ -3,20 +3,31 @@
 ## Overview
 This project automates the extraction of all possible names available through an undocumented autocomplete API. The solution systematically queries the API, navigates through constraints like rate limiting, and stores extracted names efficiently.
 
-## Key Features & Approach
-Asynchronous Requests: Utilizes Python's asyncio and aiohttp libraries for concurrent network requests, significantly improving performance.
+## Interesting Findinds on API Testing
+**Max_results**: When we hit on "http://35.207.196.198:8000/v1/autocomplete?query=a&max_results" it gives "Input should be a valid integer, unable to parse string as an integer", basically the default results for V1, V2, V3 are 10, 12, 15 respectively but after we set max_results API gives 50, 75, 100 results respectively per query.
+**Rate Limits**: It is 100, 50, 80 requests per minute from V1, V2, V3 respectively.
 
-Depth-First Search (DFS) Approach: Uses DFS to explore autocomplete suggestions by starting with single-letter prefixes and expanding recursively.
+## Approach for V1_script.py
+The extractor is implemented in Python and uses a class called AutocompleteExtractor. The main features include:
+* Concurrent Requests: Uses a ThreadPoolExecutor to perform multiple queries concurrently (one for each starting letter from the provided character list).
+* Recursive Prefix Exploration: For each query, if the API returns exactly the maximum allowed results, it assumes there might be additional names matching that prefix. The extractor then recursively extends the prefix to discover further results.
+* Rate Limiting Handling: If the API responds with a 429 status code (indicating too many requests), the extractor waits for 30 seconds (Obtained after multiple testing of code) before retrying.
+* Thread-Safe Operations: Shared data (e.g., the set of discovered names and request count) is updated in a thread-safe manner using locks.
+Saving Results: Stores extracted names in **v1_names.json** with request stats
 
-Rate Limit Management: Implements automatic retries with a 10-second delay when encountering a 429 rate limit response.
+## Approach for Better_V1_script.py
+Saving Results: Stores extracted names in **v1_names.txt** with request stats
 
-Max Results Handling: If the API returns the maximum number of results, the extractor extends the current prefix and continues the search.
+## Approach for V2 & V3
+Initialization: Sets up API parameters (base_url, max_results, charlist, version) and threading lock.
 
-Prefix Crawling Strategy: Recursively explores prefixes (e.g., a, aa, ab, etc.) to extract all available names.
+Querying API: Requests suggestions, handles rate limits (429), and retries on failures.
 
-Efficient Data Storage: Uses a set to store unique names, preventing duplicates and ensuring accurate results.
+Recursive Exploration: Uses prefixes to discover names, parallelized with ThreadPoolExecutor.
 
-## API Behavior Observations
+Saving Results: Stores extracted names in v2_names.json & v3names.json with request stats
+
+## API Behavior Observations & Results
 | Version   | Def. Results per Query | Character Set Supported |Max_results| Rate Limit (Requests/Min) | Names Extracted | Number of Requests |Execution Time|
 |-----------|----------------------  |-------------------------|-----------|-------------------------- |---------------- |------------------  |--------------|
 | Better_V1 | 10                     | Lowercase Letters (a-z) | 50        | 100                       | 18,632          | 1630               |18 Min        |
@@ -32,5 +43,5 @@ Efficient Data Storage: Uses a set to store unique names, preventing duplicates 
 - **Extracted Data:** `v1_names.json`, `v2_names.json`, `v3_names.json`,`v1_names.txt`
 
 ## Conclusion
-Through systematic API exploration, efficient request handling, and the use of concurrency, we successfully extracted names from the autocomplete system while adhering to API constraints.
+Through systematic API exploration, efficient request handling, and the use of concurrency (ThreadPoolExecutor), we successfully extracted names from the autocomplete system while adhering to API constraints.
 
