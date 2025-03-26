@@ -46,6 +46,7 @@ class AutocompleteExtractor:
             else:
                 print(f"Unexpected response format for '{query}': {data.keys()}")
                 return []
+            
 
         except Exception as e:
             print(f"Error querying '{query}': {str(e)}")
@@ -114,7 +115,7 @@ def main():
     extractor = AutocompleteExtractor(
         base_url="http://35.207.196.198:8000",
         max_results=100,
-        charlist=string.ascii_lowercase + string.digits  + "+-." + " ",
+        charlist=string.ascii_lowercase + string.digits  +  "+-. ",
         version="v3"
     )
 

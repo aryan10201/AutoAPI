@@ -98,7 +98,7 @@ class AutocompleteExtractor:
                         next_prefix = prefix + char
                         self.crawl_prefix(next_prefix)
 
-    def save_results(self, output_file="discovered_names.json"):
+    def save_results(self, output_file="v2_names.json"):
         results = {
             "total_requests": self.request_count,
             "total_names": len(self.discovered_names),
