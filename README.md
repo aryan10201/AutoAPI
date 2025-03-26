@@ -24,9 +24,11 @@ The script fetch_names.py is designed such that it **never hits** the Rate Limit
 * Iterative Querying: Starts with a simple query ("a") and progressively generates new queries to explore the autocomplete suggestions.
 * Prefix Expansion: If the API returns the maximum number of results, it intelligently expands the current query using the last returned suggestion as a basis for the next prefix.
 * Rate Limiting: Incorporates a delay of 0.5s between API requests to respect rate limits and avoid overloading the server.
+
   **Calculation of Delay**: 100 req/min means we can send requests every 0.6s without hitting the rate limit
                             It takes approx 24s to recieve data from 100 req (0.24s/req)
                             So, Delay => 0.6s-0.24s = 0.36s (We took 0.5s to be on the safe side)
+  
 * Error Handling: Includes basic error handling for API requests to gracefully manage network issues or server errors.
 * Result Saving: Saves the discovered names, along with request statistics, to a text file **v1_names.txt**
 
