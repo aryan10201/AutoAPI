@@ -1,3 +1,6 @@
+![image](https://github.com/user-attachments/assets/86bbc32f-7cb5-4d75-8402-fc85665121bf)
+![image](https://github.com/user-attachments/assets/c7ac2dd5-e7e3-46f6-bcfb-28c74305420d)
+![image](https://github.com/user-attachments/assets/ea90c9c0-d5ac-45f7-aff6-d95093a5b55f)
 # Extracting Names from Autocomplete API
 
 ## Overview
